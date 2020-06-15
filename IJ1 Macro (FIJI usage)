@@ -1,0 +1,105 @@
+//get Directory function will give a string variable (input_path) which is the path of your directory
+input_path = getDirectory("input files");
+
+//fileList will be an array which is 'contained' inside the variable input path
+fileList = getFileList(input_path); 
+
+//.legth gives the number of compartments in my array fileList
+for (f=0; f<fileList.length; f++){	
+	open(input_path + fileList[f]);
+	print(input_path + fileList[f]); //displays file that is processed
+
+
+	
+// rest of the code down here.....
+//Step1: Getting image information + Normalise the data name
+//get general information
+title = getTitle();
+
+//remove scale to work with pixels
+run("Set Scale...", "distance=0 known=0 pixel=1 unit=pixel");	
+	
+//duplicate original image
+run("Duplicate...", " ");
+duplicated = getImageID();
+
+//select first image and enhance contrast
+selectImage(title);
+rename("original");
+//run("Brightness/Contrast...");
+selectImage("original");
+run("Enhance Contrast", "saturated=0.35");
+run("Enhance Contrast", "saturated=0.35");
+run("Enhance Contrast", "saturated=0.35");
+run("Enhance Contrast", "saturated=0.35");
+
+
+//select duplicated image and do the same
+selectImage(duplicated);
+
+//run("Brightness/Contrast...");
+run("Enhance Contrast", "saturated=0.35");
+run("Enhance Contrast", "saturated=0.35");
+run("Enhance Contrast", "saturated=0.35");
+run("Enhance Contrast", "saturated=0.35");
+
+
+
+//connected components analysis (on the duplicated image)
+selectImage(duplicated);
+run("Median...", "radius=8");
+
+//By default we'll use Huang threshold method. But we don't know if it'll work perfectly
+//therefore we introduce a user check-point station using the "waitForUser" function.
+setAutoThreshold("Huang dark");
+
+//Wait for user step. This is for defining a correct threshold.
+//waitForUser("Please correct the Threshold if this is wrong. \n\nClick Ok afterwards.");
+
+
+//run("Threshold...");
+setOption("BlackBackground", true);
+run("Convert to Mask");
+
+//waitForUser("Please dilate if needed. \n\nClick Ok afterwards.");
+run("Dilate");
+
+//key message here
+setTool("line");
+waitForUser("before filling the holes, make sure to separate cells. \n\nDraw specific lines among cells");
+
+//waitForUser("Please fill holes if needed. \n\nClick Ok afterwards.");
+run("Fill Holes");
+
+//waitForUser("Please watershed if needed. \n\nClick Ok afterwards.");
+//run("Watershed");
+
+run("Set Measurements...", "area mean min integrated redirect=None decimal=2");
+run("Analyze Particles...", "size=10000.00-Infinity add");
+
+//now we go to the original image and overlay the thresholded contours
+selectImage("original");
+roiManager("Show None");
+roiManager("Show All");
+roiManager("Measure");
+
+
+
+	//save results
+	saveAs("results", input_path+title+"results.xls");
+
+//to have a check for the ROIs that fiji selected I want to save them
+selectImage("original");
+run("Capture Image");
+
+	saveAs("Tiff", input_path+title+"original.tif");
+
+
+
+	//Final step: Clean-up to prepare for next image
+	roiManager("reset");	
+	run("Close All");
+	run("Clear Results");
+	
+}
+
