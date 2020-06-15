@@ -1,0 +1,143 @@
+/*
+# Batch Analysis for measuring fluorescent signal of cells
+
+Usage:
+*Run it in FIJI (www.fiji.sc)
+
+Author: Paolo Marchi, 
+        Sheffield Institute of Translational Neuroscience (SITraN),
+        pmarchi1@sheffield.ac.uk
+		April 2020  
+
+
+## This is how to apply the code for multiple files in one directory
+
+`get Directory` _function_ will give a string variable (input_path) which is the path of your directory.
+`FileList` will be an _array_ which is contained inside the _variable_ called input_path
+*/
+input_path = getDirectory("input files");
+fileList = getFileList(input_path); 
+
+/*
+
+Now we create a `for loop` to be able to access to each file in the directory.
+the _function_ `.legth` gives the number of compartments in my array fileList.
+*/
+for (f=0; f<fileList.length; f++){	
+	open(input_path + fileList[f]);
+	print(input_path + fileList[f]);
+
+
+/*
+
+## Let's create a duplicated image that we can work with
+
+Step1: Normalise the data name and Remove scale to work with pixels
+ */
+title = getTitle();
+run("Set Scale...", "distance=0 known=0 pixel=1 unit=pixel");	
+/*
+
+Step 2: Duplicate original image and enhance contrast in both original and duplicated image
+ */
+run("Duplicate...", " ");
+duplicated = getImageID();
+
+selectImage(title);
+rename("original");
+selectImage("original");
+run("Enhance Contrast", "saturated=0.35");
+run("Enhance Contrast", "saturated=0.35");
+run("Enhance Contrast", "saturated=0.35");
+run("Enhance Contrast", "saturated=0.35");
+
+selectImage(duplicated);
+run("Enhance Contrast", "saturated=0.35");
+run("Enhance Contrast", "saturated=0.35");
+run("Enhance Contrast", "saturated=0.35");
+run("Enhance Contrast", "saturated=0.35");
+
+
+
+/*
+
+## Let's start our Connected Components Analysis 
+(This will be done on the duplicated image only)
+We will use a median filter (edge preserving filter) for facilitating the threshold that we'll apply later
+ */
+selectImage(duplicated);
+run("Median...", "radius=8");
+
+/* 
+
+By default we'll use the `Huang threshold` method. 
+*/
+setAutoThreshold("Huang dark");
+setOption("BlackBackground", true);
+run("Convert to Mask");
+
+/* 
+
+By default we'll use dilation to refine the threshold. 
+*/
+run("Dilate");
+
+/* 
+   
+   Here, we'd like to apply `fill holes`. However, often times, holes of hollow space
+   between cells is consider and measured. Of course we don't want to measure this hollow space.
+   We therefore take advantage of the command `waitForUser` and let the user create some lines
+   to separate cells so that the `fill holes` will work well subsequently.
+*/
+setTool("line");
+waitForUser("before filling the holes, make sure to separate cells. \n\nDraw specific lines among cells");
+
+/* 
+
+Now we can apply the `fill holes` 
+*/
+run("Fill Holes");
+
+/* 
+
+Now we use the particle analyser to detect the objects and we measure them 
+*/
+run("Set Measurements...", "area mean min integrated redirect=None decimal=2");
+run("Analyze Particles...", "size=10000.00-Infinity add");
+
+/* 
+
+Now we go to the original image and overlay the thresholded contours. 
+*/
+selectImage("original");
+roiManager("Show None");
+roiManager("Show All");
+roiManager("Measure");
+
+/* 
+
+## Save the results
+Now we save the results.
+*/
+saveAs("results", input_path+title+"results.xls");
+
+/* 
+
+To have a check for the ROIs that fiji selected I want to save them.
+*/
+selectImage("original");
+run("Capture Image");
+saveAs("Tiff", input_path+title+"original.tif");
+
+
+
+/*
+
+Final step: Clean-up to prepare for next image
+*/
+roiManager("reset");	
+run("Close All");
+run("Clear Results");
+	
+}
+
