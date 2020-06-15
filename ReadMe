@@ -1,0 +1,18 @@
+Usage: *Run it in FIJI (www.fiji.sc)  
+
+Author: Paolo Marchi, Sheffield Institute of Translational Neuroscience (SITraN), 
+pmarchi1@sheffield.ac.uk April 2020  
+
+Description: 
+Code to use in a FIJI-macro for the batch analysis of fluorescent intensity signal. 
+A related explanation of the steps is provided in Markdown language in code and attached PDF file.    
+
+
+How to try the code on an image?
+1) Download the folder "Example_folder" from this repository   
+2) Open FIJI < Plugins < New < Macro 
+3) Copy & Paste macro code from this repository to the new Macro file in FIJI 
+4) Run macro code 
+5) A window will open asking for the folder of interest. Select the downloaded folder "Example_folder" and confirm 
+6) The macro code will run in FIJI and it will ask you interactively to separate cells if needed 
+7) When finished, the code will save an image and an excel file in the folder previously selected (in this case, "Example_folder")
